@@ -1,29 +1,27 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using devDept.Eyeshot.Entities;
 using devDept.Eyeshot;
-using devDept.Graphics;
 using devDept.Geometry;
-using System.Collections;
-using Environment = devDept.Eyeshot.Environment;
-using Region = devDept.Eyeshot.Entities.Region;
 using devDept.Eyeshot.Translators;
 using System.IO;
-using System.Reflection;
 using System.Threading;
+using static System.Environment;
+using System.Security.Principal;
 
 namespace WindowsApplication1
 {
     public partial class Viewer3D : Form
     {
-        public string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        //public string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        public string CommonPath = GetFolderPath(SpecialFolder.CommonApplicationData);
+        public string ViewerFolderPath;
+        public string scanFilePath;
+
         public static FileSystemWatcher watcher;
-        string scanFilePath = "";
+        public bool zoomFitOnce = false;
         double currZMin = double.MaxValue;
         double currZMax = double.MinValue;
         double currXMin = double.MaxValue;
@@ -36,13 +34,33 @@ namespace WindowsApplication1
             InitializeComponent();
             this.WindowState = FormWindowState.Minimized;
             model1.Unlock("US2-FN12E-GPHW6-GX5Y-S78T"); // For more details see 'Product Activation' topic in the documentation.
-            scanFilePath = Path.Combine(path, "scan.txt");
+
+            ViewerFolderPath = Path.Combine(CommonPath, @"3D Infotech\Streamline\Viewer3D");
+
+            if (!File.Exists(ViewerFolderPath))
+            {
+                Directory.CreateDirectory(ViewerFolderPath);
+            }
+            scanFilePath = Path.Combine(ViewerFolderPath, "scan.txt");
             File.WriteAllText(scanFilePath, "");
             //MessageBox.Show($"Scan file path: {scanFile}");
+
             model1.Grid.AutoSize = false;
             model1.ProgressChanged += Model1_ProgressChanged;
             model1.WorkCancelled += Model1_WorkCancelled;
             model1.WorkCompleted += Model1_WorkCompleted;
+
+
+            WindowsPrincipal myPrincipal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
+            if (myPrincipal.IsInRole(WindowsBuiltInRole.Administrator) == false)
+            {
+                //show messagebox - displaying a messange to the user that rights are missing
+                MessageBox.Show("You need to run the application using the run as administrator option", "administrator right required", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+            else
+            {
+                MessageBox.Show("You are good to go - application running in elevated mode", "Good job", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         protected override void OnLoad(EventArgs e)
@@ -56,11 +74,17 @@ namespace WindowsApplication1
             coor.ArrowColorZ = Color.Blue;
             coor.LabelColor = Color.White;
             model1.Viewports[0].CoordinateSystemIcon = coor;
-            model1.Grid.ColorAxisX = Color.Red;
-            model1.Grid.ColorAxisY = Color.Green;
-            model1.Grid.Lighting = true;
+            model1.Grid.ColorAxisX = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(128)))));
+            model1.Grid.ColorAxisY = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(128)))), ((int)(((byte)(128)))), ((int)(((byte)(128)))));
             model1.OriginSymbol.Visible = false;
 
+            /*devDept.Eyeshot.Entities.Text txt = new Text(new Point3D(5, 5, 5), "ZERO", 5)
+            {
+                Color = Color.Blue,
+                ColorMethod = colorMethodType.byEntity
+            };
+            model1.Entities.Add(txt);*/
+            model1.Grid.Lighting = true;
             /*Grid g = new Grid(new Point3D(-100, -100), new Point2D(100, 100), 10, Plane.XY);
             //Grid g2 = new Grid(new Point3D(-100, -100), new Point2D(100, 100), 10, Plane.YZ);
             g.Lighting = true;
@@ -79,12 +103,98 @@ namespace WindowsApplication1
 
             // Fits the model in the viewport
             model1.ZoomFit();*/
-            Watch(path);
+            Watch(ViewerFolderPath);
         }
 
         public void LoadPointCloud()
         {
             Entity ent = FunctionPlot();
+            Line lnX = new Line(currXMin, currYMin, currZMin, currXMax, currYMin, currZMin);
+            Line lnY = new Line(currXMin, currYMin, currZMin, currXMin, currYMax, currZMin);
+            Line lnZ = new Line(currXMin, currYMin, currZMin, currXMin, currYMin, currZMax);
+            Line lnZ0 = new Line(currXMin - .75, currYMin, 0, currXMin + .75, currYMin, 0);
+
+            lnX.LineWeight = lnX.LineWeight * 3;
+            lnX.LineWeightMethod = colorMethodType.byEntity;
+            lnY.LineWeight = lnY.LineWeight * 3;
+            lnY.LineWeightMethod = colorMethodType.byEntity;
+            lnZ.LineWeight = lnZ.LineWeight * 3;
+            lnZ.LineWeightMethod = colorMethodType.byEntity;
+
+            lnZ0.LineWeight = lnZ0.LineWeight * 3;
+            lnZ0.LineWeightMethod = colorMethodType.byEntity;
+
+            Rotation rotation = new Rotation(Math.PI / 2d, Vector3D.AxisX, new Point3D(currXMin, currYMin, currZMin));
+            Rotation rotation2 = new Rotation(Math.PI / 2d, Vector3D.AxisX, new Point3D(currXMin, currYMin, 0));
+            Rotation rotation3 = new Rotation(Math.PI / 2d, Vector3D.AxisX, new Point3D(currXMin, currYMin, currZMax));
+
+            Rotation rotation5 = new Rotation(Math.PI / 2d, Vector3D.AxisX, new Point3D(currXMax, currYMin, currZMin));
+
+            Rotation rotation6 = new Rotation(Math.PI / 2d, Vector3D.AxisX, new Point3D(currXMin, currYMax, currZMin));
+
+            devDept.Eyeshot.Entities.Text txt = new Text(new Point3D(currXMin - 1, currYMin, currZMin), currZMin.ToString(), .75)
+            {
+                Color = Color.White,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleRight
+            };
+            txt.TransformBy(rotation);
+
+            devDept.Eyeshot.Entities.Text txt2 = new Text(new Point3D(currXMin - 1, currYMin, 0), "0", .75)
+            {
+                Color = Color.White,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleRight
+            };
+            txt2.TransformBy(rotation2);
+
+            devDept.Eyeshot.Entities.Text txt3 = new Text(new Point3D(currXMin - 1, currYMin, currZMax), currZMax.ToString(), .75)
+            {
+                Color = Color.White,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleRight
+            };
+            txt3.TransformBy(rotation3);
+
+            devDept.Eyeshot.Entities.Text txt4 = new Text(new Point3D(currXMin, currYMin, currZMax), "Z(mm)", .4)
+            {
+                Color = Color.Blue,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleCenter
+            };
+            txt4.TransformBy(rotation3);
+
+            devDept.Eyeshot.Entities.Text txt5 = new Text(new Point3D(currXMax, currYMin - 1, currZMin), currXMax.ToString(), .75)
+            {
+                Color = Color.White,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleCenter
+            };
+            txt5.TransformBy(rotation5);
+
+            devDept.Eyeshot.Entities.Text txt6 = new Text(new Point3D(currXMax, currYMin, currZMin), "X(mm)", .4)
+            {
+                Color = Color.Red,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleCenter
+            };
+            txt6.TransformBy(rotation5);
+
+            devDept.Eyeshot.Entities.Text txt7 = new Text(new Point3D(currXMin - 2, currYMax, currZMin), currYMax.ToString(), .75)
+            {
+                Color = Color.White,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleCenter
+            };
+            txt7.TransformBy(rotation6);
+
+            devDept.Eyeshot.Entities.Text txt8 = new Text(new Point3D(currXMin, currYMax, currZMin), "Y(mm)", .4)
+            {
+                Color = Color.Green,
+                ColorMethod = colorMethodType.byEntity,
+                Alignment = devDept.Eyeshot.Entities.Text.alignmentType.MiddleCenter
+            };
+            txt8.TransformBy(rotation6);
 
             if (this.InvokeRequired)
             {
@@ -97,10 +207,29 @@ namespace WindowsApplication1
                     model1.Entities.Clear();
                     // adds it to the vieport
                     model1.Entities.Add(ent);
+                    model1.Entities.Add(txt);
+                    model1.Entities.Add(txt2);
+                    model1.Entities.Add(txt3);
+                    model1.Entities.Add(txt4);
+
+
+                    model1.Entities.Add(txt5);
+                    model1.Entities.Add(txt6);
+                    model1.Entities.Add(txt7);
+                    model1.Entities.Add(txt8);
+
+                    model1.Entities.Add(lnX, Color.Red);
+                    model1.Entities.Add(lnY, Color.Green);
+                    model1.Entities.Add(lnZ, Color.Blue);
+                    model1.Entities.Add(lnZ0, Color.Blue);
                     // Sets trimetric view
-                    model1.SetView(viewType.Trimetric);
                     // Fits the model in the viewport
-                    model1.ZoomFit();
+                    if (!zoomFitOnce)
+                    {
+                        model1.ZoomFit();
+                        model1.SetView(viewType.Trimetric);
+                        zoomFitOnce = true;
+                    }
                     model1.Refresh();
                 }));
             }
@@ -113,10 +242,29 @@ namespace WindowsApplication1
                 model1.Entities.Clear();
                 // adds it to the vieport
                 model1.Entities.Add(ent);
+                model1.Entities.Add(txt);
+                model1.Entities.Add(txt2);
+                model1.Entities.Add(txt3);
+                model1.Entities.Add(txt4);
+
+
+                model1.Entities.Add(txt5);
+                model1.Entities.Add(txt6);
+                model1.Entities.Add(txt7);
+                model1.Entities.Add(txt8);
+
+                model1.Entities.Add(lnX, Color.Red);
+                model1.Entities.Add(lnY, Color.Green);
+                model1.Entities.Add(lnZ, Color.Blue);
+                model1.Entities.Add(lnZ0, Color.Blue);
                 // Sets trimetric view
-                model1.SetView(viewType.Trimetric);
                 // Fits the model in the viewport
-                model1.ZoomFit();
+                if (!zoomFitOnce)
+                {
+                    model1.ZoomFit();
+                    model1.SetView(viewType.Trimetric);
+                    zoomFitOnce = true;
+                }
                 model1.Refresh();
             }
         }
@@ -249,7 +397,7 @@ namespace WindowsApplication1
             }
         }
 
-        public static Color transitionOfHueRange(double percentage, int startHue, int endHue)
+        public static Color TransitionOfHueRange(double percentage, int startHue, int endHue)
         {
             // From 'startHue' 'percentage'-many to 'endHue'
             // Finally map from [0°, 360°] -> [0, 1.0] by dividing
@@ -259,10 +407,10 @@ namespace WindowsApplication1
             double lightness = 0.5;
 
             // Get the color
-            return hslColorToRgb(hue, saturation, lightness);
+            return HslColorToRgb(hue, saturation, lightness);
         }
 
-        public static Color hslColorToRgb(double hue, double saturation, double lightness)
+        public static Color HslColorToRgb(double hue, double saturation, double lightness)
         {
             if (saturation == 0.0)
             {
@@ -284,14 +432,14 @@ namespace WindowsApplication1
             double p = 2 * lightness - q;
 
             double oneThird = 1.0 / 3;
-            double red = percToColor(hueToRgb(p, q, hue + oneThird));
-            double green = percToColor(hueToRgb(p, q, hue));
-            double blue = percToColor(hueToRgb(p, q, hue - oneThird));
+            double red = percToColor(HueToRgb(p, q, hue + oneThird));
+            double green = percToColor(HueToRgb(p, q, hue));
+            double blue = percToColor(HueToRgb(p, q, hue - oneThird));
 
             return Color.FromArgb((int)red, (int)green, (int)blue);
         }
 
-        public static double hueToRgb(double p, double q, double t)
+        public static double HueToRgb(double p, double q, double t)
         {
             if (t < 0)
             {
@@ -326,6 +474,7 @@ namespace WindowsApplication1
         {
             return (zMax != zMin) ? ((zMax - z) / (zMax - zMin)) : 0;
         }
+
         public Color HsvToRgbWhiteEnd(double h, double S, double V)
         {
             int r, g, b;
@@ -430,12 +579,14 @@ namespace WindowsApplication1
 
             return Color.FromArgb(255, r, g, b);
         }
+
         public byte ClampToByte(int i)
         {
             if (i < 0) return 0;
             if (i > 255) return 255;
             return (byte)i;
         }
+
         /*public FastPointCloud FunctionPlot()
         {
             try
@@ -622,5 +773,4 @@ namespace WindowsApplication1
             return null;
         }
     }
-
 }

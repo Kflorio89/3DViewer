@@ -33,3 +33,21 @@ C:\Users\3D Infotech\Desktop\Viewer3D-main\Lego\bin\Debug\devDept.Geometry.v12.x
 C:\Users\3D Infotech\Desktop\Viewer3D-main\Lego\obj\Debug\Viewer3D.csproj.CopyComplete
 C:\Users\3D Infotech\Desktop\Viewer3D-main\Lego\bin\Debug\Viewer3D.exe.config
 C:\Users\3D Infotech\Desktop\Viewer3D-main\Lego\obj\Debug\Viewer3D.csproj.AssemblyReference.cache
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\Viewer3D.exe.config
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\Viewer3D.exe
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\Viewer3D.pdb
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\devDept.Eyeshot.Control.Win.v12.dll
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\devDept.Geometry.v12.dll
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\devDept.Graphics.Shaders.v12.dll
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\devDept.Graphics.Win.v12.dll
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\devDept.Eyeshot.Control.Win.v12.xml
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\devDept.Graphics.Win.v12.xml
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\bin\Debug\devDept.Geometry.v12.xml
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\Viewer3D.csproj.AssemblyReference.cache
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\WindowsApplication1.Viewer3D.resources
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\WindowsApplication1.Properties.Resources.resources
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\Viewer3D.csproj.GenerateResource.cache
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\Viewer3D.csproj.CoreCompileInputs.cache
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\Viewer3D.csproj.CopyComplete
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\Viewer3D.exe
+C:\Users\3D Infotech\Desktop\Lego Example\Lego\obj\Debug\Viewer3D.pdb
